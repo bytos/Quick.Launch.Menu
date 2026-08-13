@@ -5,6 +5,8 @@
 
 #define ID_BASE 1
 #define MAX_CMD 8192
+#define WM_QLM_CLOSE (WM_APP + 1)
+#define QLM_CLASS    L"QlmOwner"
 
 static QlmItem *g_cmd[MAX_CMD];
 static UINT g_ncmd;
@@ -138,8 +140,34 @@ static void PumpABit(void)
 	}
 }
 
+static BOOL CALLBACK CloseOther(HWND hwnd, LPARAM lp)
+{
+	WCHAR cls[32];
+	UNREFERENCED_PARAMETER(lp);
+	if(GetClassNameW(hwnd, cls, ARRAYSIZE(cls)) && !lstrcmpW(cls, QLM_CLASS))
+		PostMessageW(hwnd, WM_QLM_CLOSE, 0, 0);
+	return TRUE;
+}
+
+static void ClosePrevious(void)
+{
+	DWORD t = GetTickCount();
+	EnumWindows(CloseOther, 0);
+	while(GetTickCount() - t < 200)
+	{
+		if(!FindWindowW(QLM_CLASS, NULL))
+			break;
+		Sleep(10);
+	}
+}
+
 static LRESULT CALLBACK OwnerProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	if(msg == WM_QLM_CLOSE)
+	{
+		EndMenu();
+		return 0;
+	}
 	if(msg == WM_INITMENUPOPUP)
 	{
 		HMENU menu = (HMENU)wParam;
@@ -165,9 +193,9 @@ static HWND MakeOwner(void)
 	wc.cbSize = sizeof(wc);
 	wc.lpfnWndProc = OwnerProc;
 	wc.hInstance = GetModuleHandleW(NULL);
-	wc.lpszClassName = L"QlmOwner";
+	wc.lpszClassName = QLM_CLASS;
 	RegisterClassExW(&wc);
-	return CreateWindowExW(0, L"QlmOwner", L"", WS_POPUP,
+	return CreateWindowExW(0, QLM_CLASS, L"", WS_POPUP,
 		0, 0, 0, 0, NULL, NULL, wc.hInstance, NULL);
 }
 
