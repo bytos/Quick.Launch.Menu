@@ -1,12 +1,12 @@
 #include <windows.h>
 #include <shlobj.h>
 #include <shellapi.h>
+#include <tlhelp32.h>
 #include "qlm.h"
 
 #define ID_BASE 1
 #define MAX_CMD 8192
-#define WM_QLM_CLOSE (WM_APP + 1)
-#define QLM_CLASS    L"QlmOwner"
+#define QLM_CLASS L"QlmOwner"
 
 static QlmItem *g_cmd[MAX_CMD];
 static UINT g_ncmd;
@@ -140,34 +140,36 @@ static void PumpABit(void)
 	}
 }
 
-static BOOL CALLBACK CloseOther(HWND hwnd, LPARAM lp)
+static void KillOtherQlm(void)
 {
-	WCHAR cls[32];
-	UNREFERENCED_PARAMETER(lp);
-	if(GetClassNameW(hwnd, cls, ARRAYSIZE(cls)) && !lstrcmpW(cls, QLM_CLASS))
-		PostMessageW(hwnd, WM_QLM_CLOSE, 0, 0);
-	return TRUE;
-}
+	HANDLE snap, h;
+	PROCESSENTRY32W pe;
+	DWORD me = GetCurrentProcessId();
 
-static void ClosePrevious(void)
-{
-	DWORD t = GetTickCount();
-	EnumWindows(CloseOther, 0);
-	while(GetTickCount() - t < 200)
+	snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if(snap == INVALID_HANDLE_VALUE)
+		return;
+	pe.dwSize = sizeof(pe);
+	if(Process32FirstW(snap, &pe))
 	{
-		if(!FindWindowW(QLM_CLASS, NULL))
-			break;
-		Sleep(10);
+		do
+		{
+			if(pe.th32ProcessID != me && !lstrcmpiW(pe.szExeFile, L"qlm.exe"))
+			{
+				h = OpenProcess(PROCESS_TERMINATE, FALSE, pe.th32ProcessID);
+				if(h)
+				{
+					TerminateProcess(h, 0);
+					CloseHandle(h);
+				}
+			}
+		} while(Process32NextW(snap, &pe));
 	}
+	CloseHandle(snap);
 }
 
 static LRESULT CALLBACK OwnerProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	if(msg == WM_QLM_CLOSE)
-	{
-		EndMenu();
-		return 0;
-	}
 	if(msg == WM_INITMENUPOPUP)
 	{
 		HMENU menu = (HMENU)wParam;
@@ -241,6 +243,8 @@ int main(void)
 		pPath = NULL;
 		isPath = FALSE;
 	}
+
+	KillOtherQlm();
 
 	if(SUCCEEDED(OleInitialize(NULL)))
 	{
