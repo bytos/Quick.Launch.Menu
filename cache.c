@@ -315,11 +315,15 @@ static BOOL WalkFolder(IShellFolder *psf, LPITEMIDLIST pidlFolder,
 		if(SUCCEEDED(psf->GetDisplayNameOf(child, SHGDN_FORPARSING, &sr)))
 			StrRetToBufW(&sr, child, buf, ARRAYSIZE(buf));
 
-		/* Path mode: only .lnk. Skip folders, .url, everything else. */
+		/* Path mode: real folders (travel) and .lnk (run). Ignore the rest. */
 		if(shortcutsOnly)
 		{
+			BOOL isLnk = FALSE;
+			BOOL isRealFolder = (attrs & SFGAO_FOLDER) && !(attrs & SFGAO_LINK);
 			UINT cch = (UINT)lstrlenW(buf);
-			if(cch < 4 || lstrcmpiW(buf + cch - 4, L".lnk") != 0)
+			if(cch >= 4 && lstrcmpiW(buf + cch - 4, L".lnk") == 0)
+				isLnk = TRUE;
+			if(!isLnk && !isRealFolder)
 			{
 				ILFree(child);
 				continue;
@@ -423,7 +427,7 @@ static BOOL WalkRoot(BOOL isPath, int csidl, LPCWSTR pszPath)
 		psf = desk;
 		psf->AddRef();
 	}
-	ok = WalkFolder(psf, pidl, &g_root, 0, !isPath, isPath);
+	ok = WalkFolder(psf, pidl, &g_root, 0, TRUE, isPath);
 	psf->Release();
 	desk->Release();
 	ILFree(pidl);
