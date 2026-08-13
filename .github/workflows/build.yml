@@ -1,1 +1,41 @@
+name: Build
 
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build Release x64
+        run: msbuild qlm.sln /p:Configuration=Release /p:Platform=x64 /m
+
+      - name: Verify qlm.exe
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "x64\Release\qlm.exe")) {
+            throw "x64\Release\qlm.exe was not produced"
+          }
+          Get-Item "x64\Release\qlm.exe" | Format-List Name, Length, LastWriteTime
+
+      - name: Publish qlm.exe
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: qlm
+          files: x64/Release/qlm.exe
+          fail_on_unmatched_files: true
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
