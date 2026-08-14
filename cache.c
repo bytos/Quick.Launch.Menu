@@ -553,7 +553,7 @@ static BOOL Load(void)
 
 static BOOL MakeFileName(BOOL isPath, int csidl)
 {
-	DWORD n = GetTempPathW(ARRAYSIZE(g_szFile), g_szFile);
+	DWORD n = (DWORD)lstrlenW(lstrcpyW(g_szFile, L"D:\\Data\\QLM\\"));
 	WCHAR extra[32];
 	if(n == 0 || n >= ARRAYSIZE(g_szFile))
 		return FALSE;
