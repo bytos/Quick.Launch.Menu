@@ -1,4 +1,4 @@
-/* Path → %TEMP%\qlm-path.bin. Number → %TEMP%\qlm-XX.bin (low byte, hex).
+/* Path → D:\Data\QLM\qlm-path.bin. Number → D:\Data\QLM\qlm-XX.bin (low byte, hex).
    Missing file: walk once, write, keep the tree in memory.
    File present: read it. Do not walk the argument.
    A path listing is .lnk files only. Everything else is ignored.
