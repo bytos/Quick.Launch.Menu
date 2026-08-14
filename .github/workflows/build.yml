@@ -29,6 +29,17 @@ jobs:
           }
           Get-Item "x64\Release\qlm.exe" | Format-List Name, Length, LastWriteTime
 
+      - name: Delete and recreate latest tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -d latest || true
+          git push origin :refs/tags/latest || true
+          git tag latest
+          git push origin latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish qlm.exe
         uses: softprops/action-gh-release@v2
         with:
