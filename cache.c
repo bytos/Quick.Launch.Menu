@@ -1,4 +1,4 @@
-/* Path → D:\Data\QLM\qlm-path.bin. Number → D:\Data\QLM\qlm-XX.bin (low byte, hex).
+/* Path → D:\Data\QuickLaunch\qlm-path.bin. Number → D:\Data\QuickLaunch\qlm-XX.bin (low byte, hex).
    Missing file: walk once, write, keep the tree in memory.
    File present: read it. Do not walk the argument.
    A path listing is .lnk files only. Everything else is ignored.
@@ -553,7 +553,7 @@ static BOOL Load(void)
 
 static BOOL MakeFileName(BOOL isPath, int csidl)
 {
-	DWORD n = (DWORD)lstrlenW(lstrcpyW(g_szFile, L"D:\\Data\\QLM\\"));
+	DWORD n = (DWORD)lstrlenW(lstrcpyW(g_szFile, L"D:\\Data\\QuickLaunch\\"));
 	WCHAR extra[32];
 	if(n == 0 || n >= ARRAYSIZE(g_szFile))
 		return FALSE;
